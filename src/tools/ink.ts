@@ -1,4 +1,4 @@
-import type { computeStageScale } from "../deck/stage";
+import type { computeStageScale } from "../deck/stageScale";
 export interface Stroke {
   color: string;
   points: { x: number; y: number }[];

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { computeStageScale } from "./stage";
+import { computeStageScale } from "./stageScale";
+export { computeStageScale } from "./stageScale";
 export function Stage({
   children,
   className = "",

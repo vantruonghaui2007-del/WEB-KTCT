@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Play, Pause, RotateCcw } from "lucide-react";
-import { formatClock, paceStatus } from "./timer";
+import { formatClock, paceStatus } from "./timerUtils";
+export { formatClock, paceStatus } from "./timerUtils";
 export function Timer({ slide }: { slide: number }) {
   const [elapsed, setElapsed] = useState(0),
     [running, setRunning] = useState(false),

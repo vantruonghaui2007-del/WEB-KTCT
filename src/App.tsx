@@ -13,6 +13,7 @@ import {
   Focus,
   ZoomIn,
   Moon,
+  Sun,
   Hand,
   Trash2,
   Loader2,
@@ -60,6 +61,18 @@ export default function App() {
     [color, setColor] = useState("#9e2a2b"),
     [showTools, setShowTools] = useState(true),
     [connected, setConnected] = useState(false);
+  const [theme, setTheme] = useState<"dark" | "light">(() => {
+    const saved = localStorage.getItem("nhom7-theme");
+    return saved === "light" ? "light" : "dark";
+  });
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    document.body.className = `theme-${theme} ${theme === "dark" ? "dark" : ""}`;
+    localStorage.setItem("nhom7-theme", theme);
+  }, [theme]);
+  const toggleTheme = useCallback(() => {
+    setTheme((t) => (t === "dark" ? "light" : "dark"));
+  }, []);
   const tool = useTool();
   const channel = useRef<ReturnType<typeof createSync> | null>(null);
   const exportLock = useRef(false);
@@ -166,13 +179,25 @@ export default function App() {
       clearTimeout(timer);
       timer = setTimeout(() => setShowTools(false), 2500);
     };
+    const handleKey = (e: KeyboardEvent) => {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      )
+        return;
+      if (e.key === "t" || e.key === "T") {
+        toggleTheme();
+      }
+    };
     addEventListener("pointermove", move);
+    addEventListener("keydown", handleKey);
     move();
     return () => {
       clearTimeout(timer);
       removeEventListener("pointermove", move);
+      removeEventListener("keydown", handleKey);
     };
-  }, []);
+  }, [toggleTheme]);
   const s = slides[deck.pos.slide];
   const go = (n: number) => {
     deck.go({ slide: n, step: 0 });
@@ -349,6 +374,20 @@ export default function App() {
               onClick={() => setGesture((v) => !v)}
             >
               <Hand size={19} />
+            </button>
+            <button
+              className="icon-button theme-toggle-btn"
+              aria-label={
+                theme === "dark"
+                  ? "Chuyển sang giao diện sáng (T)"
+                  : "Chuyển sang giao diện tối (T)"
+              }
+              title={
+                theme === "dark" ? "Giao diện sáng · T" : "Giao diện tối · T"
+              }
+              onClick={toggleTheme}
+            >
+              {theme === "dark" ? <Sun size={19} /> : <Moon size={19} />}
             </button>
             <button
               className="icon-button"

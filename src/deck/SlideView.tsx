@@ -21,6 +21,7 @@ import { Gallery } from "../media/Gallery";
 import { SafeImage } from "../media/ImageStage";
 import { findMedia, type MediaItem } from "../content/media";
 import { lawLabel, todayVN, dataAgeLabel, lawStatus } from "../legal/status";
+import { AmbientBackground } from "../widgets/AmbientBackground";
 interface Props {
   slide: Slide;
   step: number;
@@ -92,6 +93,7 @@ export function SlideView({
       className={`slide slide-${s.layout} section-${s.section} ${mode === "thumb" ? "thumbnail" : ""}`}
       data-slide={s.id}
     >
+      {mode === "audience" && <AmbientBackground />}
       <div className="slide-topline">
         <div className="brand-mark">
           7
@@ -379,23 +381,59 @@ export function SlideView({
             )}
             {s.layout === "quote" && (
               <div className="quote-layout">
-                <Quote className="quote-mark" />
-                {step > 0 && <blockquote>{s.points[0]}</blockquote>}
+                {step > 0 && (
+                  <motion.div
+                    className="quote-hero-card"
+                    initial={{ opacity: 0, y: 18 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.38 }}
+                  >
+                    <div className="quote-icon-badge">
+                      <Quote className="quote-mark" />
+                    </div>
+                    <blockquote>{s.points[0]}</blockquote>
+                    <div className="quote-tagline">
+                      <span className="quote-badge-pill">ĐẶC ĐIỂM CHỦ ĐẠO</span>
+                      <span className="quote-sep" />
+                      <span className="quote-source-label">
+                        Tài liệu học tập chính thức · Tôn trọng khác biệt
+                      </span>
+                    </div>
+                  </motion.div>
+                )}
                 {step > 1 && (
-                  <div className="values-grid">
+                  <motion.div
+                    className="values-grid"
+                    initial={{ opacity: 0, y: 22 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.42 }}
+                  >
                     {s.points[1]
                       .replace("Giá trị cần phát huy: ", "")
                       .replace(/\.$/, "")
                       .split("; ")
                       .map((p, i) => (
-                        <div key={p}>
-                          <span>0{i + 1}</span>
-                          {p}
+                        <div key={p} className={`value-card value-card-${i + 1}`}>
+                          <div className="value-header">
+                            <span className="value-num">0{i + 1}</span>
+                            <span className="value-pill">GIÁ TRỊ</span>
+                          </div>
+                          <p className="value-text">{p}</p>
                         </div>
                       ))}
-                  </div>
+                  </motion.div>
                 )}
-                {step > 2 && <div className="caution-note">{s.points[2]}</div>}
+                {step > 2 && (
+                  <motion.div
+                    className="caution-note"
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35 }}
+                  >
+                    <span className="caution-badge">LƯU Ý KHOA HỌC</span>
+                    <p>{s.points[2]}</p>
+                  </motion.div>
+                )}
               </div>
             )}
             {s.layout === "quiz" && (

@@ -7,10 +7,10 @@ import {
   toHash,
   fragmentCount,
 } from "../src/deck/useDeck";
-import { computeStageScale } from "../src/deck/stage";
+import { computeStageScale } from "../src/deck/stageScale";
 import { zoomAt, panBy } from "../src/media/zoom";
 import { lawStatus, todayVN, dataAgeLabel } from "../src/legal/status";
-import { formatClock, paceStatus } from "../src/presenter/timer";
+import { formatClock, paceStatus } from "../src/presenter/timerUtils";
 import { InkStore, toStageCoords } from "../src/tools/ink";
 import { detectSwipe } from "../src/gesture/swipe";
 import { quizView } from "../src/widgets/quizState";
