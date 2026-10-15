@@ -1,0 +1,45 @@
+{
+  "name": "nhom7-thuyet-trinh",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "test": "vitest run",
+    "e2e": "playwright test",
+    "prepare:runtime": "node scripts/prepare-runtime.mjs",
+    "content": "python3 scripts/extract-content.py && prettier --write src/content/slides.ts src/content/sources.ts",
+    "format": "prettier --write src tests e2e scripts/*.mjs *.ts *.json index.html README.md THIRD_PARTY_NOTICES.md"
+  },
+  "dependencies": {
+    "@mediapipe/hands": "0.4.1675469240",
+    "framer-motion": "14.2.0",
+    "lucide-react": "1.57.0",
+    "pptxgenjs": "4.0.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@fontsource/be-vietnam-pro": "5.3.0",
+    "@playwright/test": "1.64.1",
+    "@testing-library/jest-dom": "7.0.1",
+    "@testing-library/react": "16.3.3",
+    "@testing-library/user-event": "14.6.8",
+    "@types/node": "26.6.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.2",
+    "jsdom": "30.1.2",
+    "jszip": "3.10.2",
+    "prettier": "3.9.10",
+    "typescript": "7.0.2",
+    "vite": "8.3.4",
+    "vite-plugin-pwa": "2.0.0",
+    "vitest": "5.0.4"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

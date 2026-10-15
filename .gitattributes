@@ -1,0 +1,2 @@
+# Keep the official MediaPipe distribution byte-for-byte unchanged.
+public/gesture/** -whitespace
