@@ -19,6 +19,7 @@ import {
   Loader2,
   Check,
   Palette,
+  Home,
 } from "lucide-react";
 import { slides } from "./content/slides";
 import { sectionLabels } from "./content/types";
@@ -329,6 +330,15 @@ export default function App() {
             <div className="dock-nav">
               <button
                 className="icon-button"
+                aria-label="Về slide mở đầu (Home)"
+                title="Về slide mở đầu · Home"
+                onClick={() => go(0)}
+                disabled={deck.pos.slide === 0 && deck.pos.step === 0}
+              >
+                <Home size={19} />
+              </button>
+              <button
+                className="icon-button"
                 aria-label="Ý trước (PageUp)"
                 onClick={deck.prev}
                 disabled={deck.pos.slide === 0 && deck.pos.step === 0}
@@ -469,13 +479,25 @@ export default function App() {
           {showRotateTip && (
             <aside className="mobile-rotate-tip" role="status">
               <span>📱 Xoay ngang màn hình để xem bài giảng lớn & rõ nét hơn</span>
-              <button
-                type="button"
-                onClick={() => setShowRotateTip(false)}
-                aria-label="Đóng gợi ý xoay màn hình"
-              >
-                ✕
-              </button>
+              <div className="mobile-rotate-tip-actions">
+                {deck.pos.slide > 0 && (
+                  <button
+                    type="button"
+                    className="tip-home-btn"
+                    onClick={() => go(0)}
+                    aria-label="Về slide đầu tiên"
+                  >
+                    Về slide 01
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowRotateTip(false)}
+                  aria-label="Đóng gợi ý xoay màn hình"
+                >
+                  ✕
+                </button>
+              </div>
             </aside>
           )}
           <button

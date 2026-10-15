@@ -3,6 +3,9 @@ import { it, expect, vi, beforeAll } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import App from "../src/App";
 import { FlipCard } from "../src/widgets/FlipCard";
+import { Overview } from "../src/deck/Overview";
+import { Quiz } from "../src/widgets/Quiz";
+import { SortGame } from "../src/media/SortGame";
 import { slides } from "../src/content/slides";
 
 beforeAll(() => {
@@ -23,6 +26,14 @@ beforeAll(() => {
     arc: vi.fn(),
     fill: vi.fn(),
   }) as unknown as typeof HTMLCanvasElement.prototype.getContext;
+
+  // Mock HTMLDialogElement methods for jsdom
+  HTMLDialogElement.prototype.showModal = function () {
+    this.setAttribute("open", "");
+  };
+  HTMLDialogElement.prototype.close = function () {
+    this.removeAttribute("open");
+  };
 });
 
 it("renders slide 12 FlipCards with Lucide vector icons and no unicode emoji stickers", () => {
@@ -56,14 +67,20 @@ it("renders slide 12 FlipCards with Lucide vector icons and no unicode emoji sti
 });
 
 it("supports mobile touch navigation and swipe gestures in App", async () => {
-  window.location.hash = "#/12/0";
+  window.location.hash = "#/19/0";
   render(<App />);
 
   // Check mobile navigation buttons exist
   const prevBtn = screen.getByLabelText("Ý trước");
   const nextBtn = screen.getByLabelText("Ý tiếp");
+  const homeBtn = screen.getByLabelText("Về slide mở đầu (Home)");
   expect(prevBtn).toBeInTheDocument();
   expect(nextBtn).toBeInTheDocument();
+  expect(homeBtn).toBeInTheDocument();
+
+  // Test home button returns to slide 1 from slide 19
+  fireEvent.click(homeBtn);
+  expect(window.location.hash).toBe("#/1/0");
 
   // Check rotate tip is rendered and can be closed
   const closeTip = screen.getByLabelText("Đóng gợi ý xoay màn hình");
@@ -71,7 +88,7 @@ it("supports mobile touch navigation and swipe gestures in App", async () => {
   fireEvent.click(closeTip);
   expect(screen.queryByLabelText("Đóng gợi ý xoay màn hình")).toBeNull();
 
-  // Test touch swipe left to go next
+  // Test touch swipe left to advance step
   await act(async () => {
     fireEvent.touchStart(window, {
       touches: [{ clientX: 250, clientY: 200 }],
@@ -81,8 +98,8 @@ it("supports mobile touch navigation and swipe gestures in App", async () => {
     });
   });
 
-  // Verify slide moved to 13
-  expect(window.location.hash).toBe("#/13/0");
+  // Verify slide moved to next step
+  expect(window.location.hash).toBe("#/1/1");
 
   // Test touch swipe right to go back
   await act(async () => {
@@ -94,6 +111,34 @@ it("supports mobile touch navigation and swipe gestures in App", async () => {
     });
   });
 
-  // Verify slide moved back to 12
-  expect(window.location.hash).toBe("#/12/0");
+  // Verify slide moved back to 1/0
+  expect(window.location.hash).toBe("#/1/0");
+});
+
+it("Overview has a restart button that jumps to slide 1", () => {
+  const onGo = vi.fn();
+  const onClose = vi.fn();
+  render(<Overview current={18} onGo={onGo} onClose={onClose} />);
+
+  const restartBtn = screen.getByRole("button", {
+    name: /Về slide mở đầu \(01\)/i,
+  });
+  expect(restartBtn).toBeInTheDocument();
+  fireEvent.click(restartBtn);
+  expect(onGo).toHaveBeenCalledWith(0);
+  expect(onClose).toHaveBeenCalled();
+});
+
+it("renders Quiz with touch-friendly guidance", () => {
+  render(<Quiz items={slides[18].quiz!} step={0} />);
+  expect(
+    screen.getByText(/Chạm chọn đáp án · Bấm \[Tiếp\] hoặc vuốt để xem giải thích/i),
+  ).toBeInTheDocument();
+});
+
+it("renders SortGame with touch-friendly guidance", () => {
+  render(<SortGame conclusion="Kết luận" />);
+  expect(
+    screen.getByText(/Chạm thẻ rồi chạm nhóm bên dưới để phân loại/i),
+  ).toBeInTheDocument();
 });

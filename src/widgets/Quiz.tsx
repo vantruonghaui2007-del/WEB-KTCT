@@ -75,7 +75,7 @@ export function Quiz({
           </>
         ) : (
           <>
-            <ArrowRight /> Chọn 1 / 2 · Nhấn tiếp để xem đáp án
+            <ArrowRight /> Chạm chọn đáp án · Bấm [Tiếp] hoặc vuốt để xem giải thích
           </>
         )}
       </div>

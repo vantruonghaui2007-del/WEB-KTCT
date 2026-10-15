@@ -92,7 +92,7 @@ export function SortGame({ conclusion }: { conclusion: string }) {
     <div className="sort-game">
       <div className="sort-instructions">
         <span>
-          Kéo thẻ vào nhóm · Hoặc chọn thẻ rồi nhấn <kbd>1</kbd> / <kbd>2</kbd>
+          Chạm thẻ rồi chạm nhóm bên dưới để phân loại (hoặc kéo thả)
         </span>
         <button
           aria-label="Chơi lại phân loại"
@@ -115,7 +115,11 @@ export function SortGame({ conclusion }: { conclusion: string }) {
       </div>
       <div className="sort-zones">
         {(["ton-giao", "tin-nguong"] as const).map((group, i) => (
-          <div key={group} data-group={group} className="sort-zone">
+          <div
+            key={group}
+            data-group={group}
+            className={`sort-zone ${selected ? "ready-to-place" : ""}`}
+          >
             <button
               className="zone-label"
               aria-label={`Xếp thẻ đã chọn vào ${i === 0 ? "Cơ sở tôn giáo" : "Không gian tín ngưỡng"}`}

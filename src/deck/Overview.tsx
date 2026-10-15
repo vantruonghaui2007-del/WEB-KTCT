@@ -1,3 +1,4 @@
+import { Home } from "lucide-react";
 import { slides } from "../content/slides";
 import { sectionLabels } from "../content/types";
 import { Modal } from "../widgets/Modal";
@@ -19,9 +20,21 @@ export function Overview({
       onClose={onClose}
       className="overview-modal"
     >
-      <p className="modal-description">
-        20 màn hình · Chọn một chủ đề để tiếp tục hành trình.
-      </p>
+      <div className="overview-header-actions">
+        <p className="modal-description">
+          20 màn hình · Chạm để chuyển nhanh đến slide bất kỳ.
+        </p>
+        <button
+          type="button"
+          className="overview-restart-btn"
+          onClick={() => {
+            onGo(0);
+            onClose();
+          }}
+        >
+          <Home size={16} /> Về slide mở đầu (01)
+        </button>
+      </div>
       <div className="overview-grid">
         {slides.map((s, i) => {
           const go = () => {
