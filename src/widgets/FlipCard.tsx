@@ -1,6 +1,25 @@
 import { useState } from "react";
-import { RotateCw } from "lucide-react";
+import {
+  RotateCw,
+  Award,
+  Briefcase,
+  UserCheck,
+  Sparkles,
+  Globe,
+  Users,
+} from "lucide-react";
 import type { Concept } from "../content/types";
+
+function getConceptIcon(term: string, index: number) {
+  if (term.includes("Chức sắc")) return Award;
+  if (term.includes("Chức việc")) return Briefcase;
+  if (term.includes("Nhà tu hành")) return UserCheck;
+  if (term.includes("Tín ngưỡng")) return Sparkles;
+  if (term.includes("Tôn giáo")) return Globe;
+  if (term.includes("Tín đồ")) return Users;
+  return [Award, Briefcase, UserCheck][index % 3];
+}
+
 export function FlipCard({
   concept,
   index,
@@ -11,6 +30,8 @@ export function FlipCard({
   interactive?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const Icon = getConceptIcon(concept.term, index);
+
   return (
     <button
       className={`flip-card ${open ? "flipped" : ""}`}
@@ -22,7 +43,9 @@ export function FlipCard({
       <span className="flip-inner">
         <span className="flip-front">
           <span className="card-number">0{index + 1}</span>
-          <span className="concept-symbol">{["◈", "✳", "◇"][index]}</span>
+          <span className="concept-symbol" aria-hidden="true">
+            <Icon size={58} strokeWidth={1.8} />
+          </span>
           <strong>{concept.term}</strong>
           <small>
             <RotateCw size={18} /> Chạm để khám phá

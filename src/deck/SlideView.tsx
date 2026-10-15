@@ -187,7 +187,9 @@ export function SlideView({
           >
             Nhìn lại năm đặc điểm <ArrowRight size={22} />
           </button>
-          <span className="closing-flower">✳</span>
+          <span className="closing-flower" aria-hidden="true">
+            <Flower2 size={220} strokeWidth={0.8} />
+          </span>
         </div>
       ) : (
         <>

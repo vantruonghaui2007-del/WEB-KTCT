@@ -40,17 +40,40 @@ export default function App() {
   const presenter = new URLSearchParams(location.search).has("presenter");
   const reduced = useReducedMotion();
   const [offlineReady, setOfflineReady] = useState(false);
+  const [showOfflineBadge, setShowOfflineBadge] = useState(true);
+  const [showRotateTip, setShowRotateTip] = useState(true);
+
   useEffect(() => {
     if (import.meta.env.PROD && "serviceWorker" in navigator) {
       let alive = true;
-      void navigator.serviceWorker.ready.then(() => {
+      const timeout = setTimeout(() => {
         if (alive) setOfflineReady(true);
-      });
+      }, 2500);
+
+      navigator.serviceWorker.ready
+        .then(() => {
+          if (alive) setOfflineReady(true);
+        })
+        .catch(() => {
+          if (alive) setOfflineReady(true);
+        })
+        .finally(() => clearTimeout(timeout));
+
       return () => {
         alive = false;
+        clearTimeout(timeout);
       };
+    } else {
+      setOfflineReady(true);
     }
   }, []);
+
+  useEffect(() => {
+    if (offlineReady) {
+      const t = setTimeout(() => setShowOfflineBadge(false), 3500);
+      return () => clearTimeout(t);
+    }
+  }, [offlineReady]);
   const [media, setMedia] = useState<MediaItem | null>(null),
     [video, setVideo] = useState(false),
     [help, setHelp] = useState(false),
@@ -198,6 +221,43 @@ export default function App() {
       removeEventListener("keydown", handleKey);
     };
   }, [toggleTheme]);
+
+  useEffect(() => {
+    let startX = 0;
+    let startY = 0;
+    let startTime = 0;
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      startTime = Date.now();
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      if (e.changedTouches.length !== 1) return;
+      if (media || video || help || live.current.deck.overview) return;
+
+      const dx = e.changedTouches[0].clientX - startX;
+      const dy = e.changedTouches[0].clientY - startY;
+      const dt = Date.now() - startTime;
+
+      if (Math.abs(dx) > 38 && Math.abs(dx) > Math.abs(dy) * 1.2 && dt < 800) {
+        if (dx < 0) {
+          live.current.deck.next();
+        } else {
+          live.current.deck.prev();
+        }
+      }
+    };
+
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchend", onTouchEnd, { passive: true });
+    return () => {
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [media, video, help]);
   const s = slides[deck.pos.slide];
   const go = (n: number) => {
     deck.go({ slide: n, step: 0 });
@@ -406,13 +466,47 @@ export default function App() {
               <HelpCircle size={19} />
             </button>
           </div>
-          <span className="offline-badge">
-            {offlineReady
-              ? "✓ Đã lưu để dùng offline"
-              : import.meta.env.PROD
-                ? "Đang chuẩn bị bản offline…"
-                : "Bản phát triển"}
-          </span>
+          {showRotateTip && (
+            <aside className="mobile-rotate-tip" role="status">
+              <span>📱 Xoay ngang màn hình để xem bài giảng lớn & rõ nét hơn</span>
+              <button
+                type="button"
+                onClick={() => setShowRotateTip(false)}
+                aria-label="Đóng gợi ý xoay màn hình"
+              >
+                ✕
+              </button>
+            </aside>
+          )}
+          <button
+            type="button"
+            className="mobile-touch-nav mobile-touch-prev"
+            aria-label="Ý trước"
+            onClick={deck.prev}
+            disabled={deck.pos.slide === 0 && deck.pos.step === 0}
+          >
+            <ArrowLeft size={22} />
+          </button>
+          <button
+            type="button"
+            className="mobile-touch-nav mobile-touch-next"
+            aria-label="Ý tiếp"
+            onClick={deck.next}
+            disabled={
+              deck.pos.slide === 19 && deck.pos.step === fragmentCount(s)
+            }
+          >
+            <ArrowRight size={22} />
+          </button>
+          {showOfflineBadge && (
+            <span className="offline-badge">
+              {offlineReady
+                ? "✓ Đã lưu để dùng offline"
+                : import.meta.env.PROD
+                  ? "Đang chuẩn bị bản offline…"
+                  : "Bản phát triển"}
+            </span>
+          )}
           <div className="section-indicator" aria-live="polite">
             {sectionLabels[s.section]} · {deck.pos.step}/{fragmentCount(s)}
           </div>
