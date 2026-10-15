@@ -100,4 +100,21 @@ Các kiểm tra bao gồm nội dung đối chiếu DOCX, timezone tại giao th
 
 ## Đưa lên hosting
 
-`npm run build` tạo thư mục `dist/` để phục vụ trên static hosting. Vite dùng `base: './'`, hỗ trợ đường dẫn con như GitHub Pages. Đưa mã nguồn lên GitHub chưa tự động xuất bản website; cần cấu hình hosting riêng khi nhóm chọn nơi triển khai.
+### GitHub Pages miễn phí
+
+Workflow `.github/workflows/deploy-pages.yml` tự cài thư viện theo lockfile, chạy kiểm thử, dựng và xuất bản website mỗi khi có commit mới trên nhánh `main`. Website được GitHub phục vụ ngay cả khi máy của nhóm tắt; không cần chạy localhost để người khác xem.
+
+Với tài khoản GitHub Free, repository cần để **Public**. Bật Pages một lần:
+
+1. Mở repository trên GitHub → **Settings → Pages**.
+2. Trong **Build and deployment → Source**, chọn **GitHub Actions**.
+3. Vào **Actions → Deploy presentation to GitHub Pages → Run workflow**, chọn nhánh `main` rồi chạy. Nếu lượt chạy trước khi bật Pages bị lỗi, chạy lại sau khi đã chọn Source.
+4. Chờ cả hai job **Build and validate** và **Publish website** có dấu tích xanh. URL website xuất hiện trong phần deployment `github-pages`.
+
+Địa chỉ dự kiến sau khi triển khai thành công: **https://vantruonghaui2007-del.github.io/WEB-KTCT/**. Cấu hình workflow trong mã nguồn chưa chứng minh website đã được xuất bản; kiểm tra lượt chạy Actions và địa chỉ Pages sau khi bật.
+
+Các cập nhật sau đó chỉ cần push lên `main`; không nhập token hoặc mật khẩu vào mã nguồn. GitHub Actions sử dụng quyền triển khai của repository. GitHub Pages có các hạn mức sử dụng của dịch vụ, phù hợp với website thuyết trình tĩnh này.
+
+### Static hosting khác
+
+`npm run build` tạo thư mục `dist/` để phục vụ trên static hosting. Vite dùng `base: './'`, hỗ trợ đường dẫn con như GitHub Pages. Các tệp ảnh, video và MediaPipe nằm trong bản dựng; hosting không cần backend hoặc cơ sở dữ liệu.
