@@ -35,7 +35,7 @@ export function AmbientBackground() {
 
     const colors = [
       "rgba(212, 175, 87, ", // Gold
-      "rgba(230, 57, 70, ",  // Cinnabar
+      "rgba(230, 57, 70, ", // Cinnabar
       "rgba(245, 238, 223, ", // Soft cream
     ];
 
@@ -67,7 +67,9 @@ export function AmbientBackground() {
       mouseY = (e.clientY - rect.top) * scaleY;
     };
 
-    window.addEventListener("pointermove", handlePointerMove, { passive: true });
+    window.addEventListener("pointermove", handlePointerMove, {
+      passive: true,
+    });
 
     let t = 0;
     const render = () => {
@@ -103,7 +105,10 @@ export function AmbientBackground() {
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
         ctx.fillStyle = `${p.color}${Math.max(0, Math.min(1, p.alpha))})`;
-        ctx.shadowColor = p.color === colors[0] ? "rgba(212, 175, 87, 0.4)" : "rgba(230, 57, 70, 0.3)";
+        ctx.shadowColor =
+          p.color === colors[0]
+            ? "rgba(212, 175, 87, 0.4)"
+            : "rgba(230, 57, 70, 0.3)";
         ctx.shadowBlur = p.radius * 3;
         ctx.fill();
       }

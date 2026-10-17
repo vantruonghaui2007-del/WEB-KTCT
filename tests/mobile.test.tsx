@@ -132,7 +132,7 @@ it("Overview has a restart button that jumps to slide 1", () => {
 it("renders Quiz with touch-friendly guidance", () => {
   render(<Quiz items={slides[18].quiz!} step={0} />);
   expect(
-    screen.getByText(/Chạm chọn đáp án · Bấm \[Tiếp\] hoặc vuốt để xem giải thích/i),
+    screen.getByText(/Chọn A, B, C hoặc D rồi xác nhận/i),
   ).toBeInTheDocument();
 });
 

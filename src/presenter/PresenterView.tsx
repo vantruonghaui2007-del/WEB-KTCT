@@ -151,7 +151,7 @@ export function PresenterView({
               </button>
             </div>
           </div>
-          {s.sourceIds.includes("luat-2016") &&
+          {s.sourceIds.includes("luat-hien-hanh") &&
             lawStatus().phase === "in-force" && (
               <p className="legal-alert">{lawLabel()}</p>
             )}

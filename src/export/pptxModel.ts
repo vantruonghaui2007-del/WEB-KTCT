@@ -1,12 +1,14 @@
 import type { Slide, Source } from "../content/types";
 import { formatStat } from "../widgets/CountUp";
 import { dataAgeLabel, lawLabel } from "../legal/status";
+import { findMedia } from "../content/media";
 export interface PptxSlideModel {
   title: string;
   bullets: string[];
   notes: string;
   sourceLine: string;
   imagePath?: string;
+  imageCredit?: string;
   footer: string;
 }
 export function buildPptxModel(
@@ -28,18 +30,19 @@ export function buildPptxModel(
       ];
     }
     if (s.quiz) {
-      bullets = s.quiz.map(
-        (q, i) =>
-          `Câu ${i + 1}. ${q.question} ${q.options.map((o) => `${o.key}. ${o.text}`).join(" ")}`,
-      );
+      bullets = s.quiz.map((q, i) => `Câu ${i + 1}. ${q.question}`);
       notes +=
         "\n\n" +
         s.quiz
-          .map((q, i) => `Câu ${i + 1}. Đáp án ${q.answer}. ${q.explanation}`)
+          .map(
+            (q, i) =>
+              `Câu ${i + 1}. ${q.question}\n${q.options.map((o) => `${o.key}. ${o.text}`).join("\n")}\nĐáp án ${q.answer}. ${q.explanation}`,
+          )
           .join("\n");
     }
     if (s.id === "17") bullets.push(lawLabel(now));
     const m = s.mediaIds?.[0];
+    const image = findMedia(m || "pagoda");
     return {
       title: s.title,
       bullets,
@@ -53,10 +56,11 @@ export function buildPptxModel(
             })
             .join("; ")
         : "",
-      imagePath: m
-        ? `media/export/${m}.png`
-        : s.id === "01"
-          ? "media/export/pagoda.png"
+      imagePath:
+        m || s.id === "01" ? `media/export/${image.id}.jpg` : undefined,
+      imageCredit:
+        m || s.id === "01"
+          ? `Ảnh: ${image.credit} · ${image.license}\n${image.sourceUrl}`
           : undefined,
       footer: `Nhóm 7 · Chủ đề 7 · ${String(i + 1).padStart(2, "0")}/${deck.length}`,
     };

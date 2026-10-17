@@ -20,7 +20,7 @@ it("advances fragments, transitions slides and clamps ends", () => {
   expect(prev({ slide: 1, step: 0 }, slides)).toEqual({ slide: 0, step: 3 });
   expect(prev({ slide: 0, step: 0 }, slides)).toEqual({ slide: 0, step: 0 });
   expect(next({ slide: 19, step: 3 }, slides)).toEqual({ slide: 19, step: 3 });
-  expect(fragmentCount(slides[18])).toBe(9);
+  expect(fragmentCount(slides[18])).toBe(14);
 });
 it("parses, clamps and round trips hash positions", () => {
   expect(parseHash("#/7/2", slides)).toEqual({ slide: 6, step: 2 });
@@ -106,9 +106,10 @@ it("keeps annotations isolated by slide", () => {
   expect(ink.get("08")).toEqual([s]);
 });
 it("quiz reveal is driven only by deck steps", () => {
-  expect(quizView(0, 5)).toEqual({ index: 0, revealed: false });
-  expect(quizView(3, 5)).toEqual({ index: 1, revealed: true });
-  expect(quizView(9, 5)).toEqual({ index: 4, revealed: true });
+  expect(quizView(0, 7)).toEqual({ index: 0, revealed: false, result: false });
+  expect(quizView(3, 7)).toEqual({ index: 1, revealed: true, result: false });
+  expect(quizView(13, 7)).toEqual({ index: 6, revealed: true, result: false });
+  expect(quizView(14, 7)).toEqual({ index: 6, revealed: true, result: true });
 });
 it("recognizes hand swipes with the specified direction and cooldown", () => {
   const s = (p: number[][]) => p.map(([t, x]) => ({ t, x }));
@@ -125,6 +126,7 @@ it("recognizes hand swipes with the specified direction and cooldown", () => {
     detectSwipe(
       s([
         [0, 0.7],
+        [150, 0.55],
         [300, 0.4],
       ]),
     ),
@@ -149,9 +151,10 @@ it("recognizes hand swipes with the specified direction and cooldown", () => {
     detectSwipe(
       s([
         [1000, 0.3],
+        [1150, 0.5],
         [1300, 0.7],
       ]),
-      { lastFireAt: 500 },
+      { lastFireAt: 700 },
     ),
   ).toBeNull();
 });

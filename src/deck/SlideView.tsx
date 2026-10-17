@@ -92,6 +92,18 @@ export function SlideView({
     <article
       className={`slide slide-${s.layout} section-${s.section} ${mode === "thumb" ? "thumbnail" : ""}`}
       data-slide={s.id}
+      onClick={(event) => {
+        if (!interactive) return;
+        const target = event.target;
+        if (
+          target instanceof Element &&
+          target.closest(
+            "button,a,video,input,textarea,select,[role='button'],[data-no-advance]",
+          )
+        )
+          return;
+        onNext?.();
+      }}
     >
       {mode === "audience" && <AmbientBackground />}
       <div className="slide-topline">
@@ -141,7 +153,7 @@ export function SlideView({
                 onClick={onVideo}
                 disabled={!interactive}
               >
-                <Play size={19} /> Xem mở đầu <span>48 giây</span>
+                <Play size={19} /> Xem video tư liệu VNA
               </button>
             </div>
             <div className="hero-meta">
@@ -166,9 +178,13 @@ export function SlideView({
             <div className="hero-seal">
               VN<span>CHỦ ĐỀ 07</span>
             </div>
-            <p className="art-disclosure">
-              Minh họa kiến trúc · Tư liệu gốc Nhóm 7
-            </p>
+            <button
+              className="art-disclosure"
+              onClick={() => onMedia?.(findMedia("pagoda"))}
+              disabled={!interactive}
+            >
+              Ảnh tư liệu thật · xem thông tin ghi công
+            </button>
           </div>
         </div>
       ) : s.layout === "closing" ? (
@@ -213,18 +229,15 @@ export function SlideView({
                   <div className="member-list">
                     {s.points[0]
                       .split("Thành viên: ")[1]
-                      .split(". Nhóm")[0]
                       .split("; ")
                       .map((n, i) => (
                         <div key={n}>
-                          <span>0{i + 1}</span>
+                          <span>{String(i + 1).padStart(2, "0")}</span>
                           <b>{n}</b>
                         </div>
                       ))}
                   </div>
-                  <p className="member-note">
-                    Nhóm kiểm tra và bổ sung danh sách trước khi trình bày.
-                  </p>
+                  <p className="member-note">Nhóm 7 · 11 thành viên</p>
                 </div>
                 <div
                   className={`roadmap-list ${step > 1 ? "visible-fragment" : ""}`}
@@ -258,7 +271,7 @@ export function SlideView({
                     onClick={onVideo}
                     disabled={!interactive}
                   >
-                    <Play size={18} /> Video mở đầu · 48 giây
+                    <Play size={18} /> Video tư liệu Vesak 2025 · VNA
                   </button>
                 </div>
                 {step > 1 && interactive ? (
@@ -376,7 +389,10 @@ export function SlideView({
                     disabled={!interactive}
                   >
                     <SafeImage item={findMedia("vesak")} />
-                    <span>Minh họa chủ đề Vesak · Không phải ảnh sự kiện</span>
+                    <span>
+                      Tư liệu Lễ Phật đản Sa Đéc, 2008 · Không phải ảnh Vesak
+                      2025
+                    </span>
                   </button>
                 )}
               </div>
@@ -415,7 +431,10 @@ export function SlideView({
                       .replace(/\.$/, "")
                       .split("; ")
                       .map((p, i) => (
-                        <div key={p} className={`value-card value-card-${i + 1}`}>
+                        <div
+                          key={p}
+                          className={`value-card value-card-${i + 1}`}
+                        >
                           <div className="value-header">
                             <span className="value-num">0{i + 1}</span>
                             <span className="value-pill">GIÁ TRỊ</span>
@@ -439,7 +458,13 @@ export function SlideView({
               </div>
             )}
             {s.layout === "quiz" && (
-              <Quiz items={s.quiz!} step={step} interactive={interactive} />
+              <Quiz
+                items={s.quiz!}
+                step={step}
+                interactive={interactive}
+                onNext={onNext}
+                onRestart={() => onGo?.(18)}
+              />
             )}
           </div>
         </>

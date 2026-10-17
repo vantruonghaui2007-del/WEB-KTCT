@@ -83,12 +83,12 @@ export async function exportPptx(
     );
     if (image) {
       s.addImage({ data: image, x: 9.05, y: 2.35, w: 3.7, h: 2.78 });
-      s.addText("Minh họa gốc · Nhóm 7 · CC0 1.0\nKhông phải ảnh tư liệu", {
+      s.addText(m.imageCredit || "", {
         x: 9.05,
         y: 5.25,
         w: 3.7,
-        h: 0.55,
-        fontSize: 9,
+        h: 0.72,
+        fontSize: 7,
         color: "6C6053",
         margin: 0,
       });

@@ -32,8 +32,8 @@ export interface Concept {
 }
 export interface QuizItem {
   question: string;
-  options: { key: "A" | "B"; text: string }[];
-  answer: "A" | "B";
+  options: { key: "A" | "B" | "C" | "D"; text: string }[];
+  answer: "A" | "B" | "C" | "D";
   explanation: string;
 }
 export interface Slide {

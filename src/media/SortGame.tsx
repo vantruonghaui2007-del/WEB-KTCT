@@ -11,6 +11,15 @@ const ids = [
   "communal",
   "temple",
 ];
+const labels: Record<string, string> = {
+  pagoda: "Chùa",
+  church: "Nhà thờ",
+  caodai: "Thánh thất",
+  mosque: "Thánh đường",
+  altar: "Bàn thờ tổ tiên",
+  communal: "Đình",
+  temple: "Đền",
+};
 export function SortGame({ conclusion }: { conclusion: string }) {
   const [placed, setPlaced] = useState<string[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
@@ -42,7 +51,8 @@ export function SortGame({ conclusion }: { conclusion: string }) {
       <button
         key={id}
         className={`sort-card ${selected === id ? "selected" : ""} ${wrong === id ? "shake" : ""} ${done ? "sorted" : ""}`}
-        aria-label={`${m.alt}${done ? ", đã xếp đúng" : ""}`}
+        aria-label={`${labels[id]}${done ? ", đã xếp đúng" : ""}`}
+        aria-description={m.alt}
         aria-pressed={selected === id}
         onClick={() => !done && setSelected(id)}
         onKeyDown={(e) => {
@@ -82,7 +92,7 @@ export function SortGame({ conclusion }: { conclusion: string }) {
       >
         <SafeImage item={m} />
         <span>
-          {m.alt}
+          {labels[id]}
           {done && <Check size={18} />}
         </span>
       </button>
@@ -91,9 +101,7 @@ export function SortGame({ conclusion }: { conclusion: string }) {
   return (
     <div className="sort-game">
       <div className="sort-instructions">
-        <span>
-          Chạm thẻ rồi chạm nhóm bên dưới để phân loại (hoặc kéo thả)
-        </span>
+        <span>Chạm thẻ rồi chạm nhóm bên dưới để phân loại (hoặc kéo thả)</span>
         <button
           aria-label="Chơi lại phân loại"
           onClick={() => {
@@ -142,7 +150,7 @@ export function SortGame({ conclusion }: { conclusion: string }) {
         {placed.length === 7
           ? conclusion
           : message ||
-            "Các hình ảnh là minh họa khái quát, không phải ảnh của một địa điểm cụ thể."}
+            "Chọn ảnh tư liệu thật rồi phân loại theo cơ sở tôn giáo hoặc không gian tín ngưỡng."}
       </div>
       {ghost && (
         <div className="drag-hint">Đang kéo: {findMedia(ghost.id).alt}</div>

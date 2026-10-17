@@ -20,6 +20,7 @@ import {
   Check,
   Palette,
   Home,
+  Shuffle,
 } from "lucide-react";
 import { slides } from "./content/slides";
 import { sectionLabels } from "./content/types";
@@ -37,6 +38,7 @@ import { ToolLayer } from "./tools/ToolLayer";
 import { createSync } from "./presenter/sync";
 import { PresenterView } from "./presenter/PresenterView";
 import { GestureControl } from "./gesture/GestureControl";
+import { ClassPicker } from "./widgets/ClassPicker";
 export default function App() {
   const presenter = new URLSearchParams(location.search).has("presenter");
   const reduced = useReducedMotion();
@@ -77,8 +79,11 @@ export default function App() {
   }, [offlineReady]);
   const [media, setMedia] = useState<MediaItem | null>(null),
     [video, setVideo] = useState(false),
-    [help, setHelp] = useState(false),
+    [help, setHelp] = useState(
+      () => !presenter && localStorage.getItem("nhom7-guide-seen") !== "1",
+    ),
     [gesture, setGesture] = useState(false),
+    [picker, setPicker] = useState(false),
     [exporting, setExporting] = useState(false),
     [notice, setNotice] = useState(""),
     [clearToken, setClearToken] = useState(0),
@@ -97,6 +102,10 @@ export default function App() {
   const toggleTheme = useCallback(() => {
     setTheme((t) => (t === "dark" ? "light" : "dark"));
   }, []);
+  const closeHelp = () => {
+    localStorage.setItem("nhom7-guide-seen", "1");
+    setHelp(false);
+  };
   const tool = useTool();
   const channel = useRef<ReturnType<typeof createSync> | null>(null);
   const exportLock = useRef(false);
@@ -147,7 +156,7 @@ export default function App() {
     else tool.set(t);
   };
   const deck = useDeck(slides, {
-    enabled: !media && !video && !help,
+    enabled: !media && !video && !help && !picker,
     onChange: (p) => {
       channel.current?.send({ type: presenter ? "nav" : "state", pos: p });
     },
@@ -157,7 +166,10 @@ export default function App() {
       else if (a === "fullscreen") full();
       else if (a === "help") setHelp(true);
       else if (a === "gesture") setGesture((v) => !v);
-      else if (a === "clear") setClearToken((v) => v + 1);
+      else if (a === "picker" && !presenter) {
+        tool.reset();
+        setPicker(true);
+      } else if (a === "clear") setClearToken((v) => v + 1);
       else if (a === "escape") {
         tool.reset();
         setGesture(false);
@@ -205,6 +217,7 @@ export default function App() {
     };
     const handleKey = (e: KeyboardEvent) => {
       if (
+        document.querySelector("dialog[open]") ||
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLTextAreaElement
       )
@@ -237,7 +250,8 @@ export default function App() {
 
     const onTouchEnd = (e: TouchEvent) => {
       if (e.changedTouches.length !== 1) return;
-      if (media || video || help || live.current.deck.overview) return;
+      if (media || video || help || picker || live.current.deck.overview)
+        return;
 
       const dx = e.changedTouches[0].clientX - startX;
       const dy = e.changedTouches[0].clientY - startY;
@@ -258,7 +272,7 @@ export default function App() {
       window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("touchend", onTouchEnd);
     };
-  }, [media, video, help]);
+  }, [media, video, help, picker]);
   const s = slides[deck.pos.slide];
   const go = (n: number) => {
     deck.go({ slide: n, step: 0 });
@@ -417,6 +431,18 @@ export default function App() {
             )}
             <span className="dock-divider" />
             <button
+              className="picker-dock-button"
+              aria-label="Quay tên ngẫu nhiên (R)"
+              title="Quay tên từ danh sách lớp · R"
+              onClick={() => {
+                tool.reset();
+                setPicker(true);
+              }}
+            >
+              <Shuffle size={18} />
+              <span>Gọi tên</span>
+            </button>
+            <button
               className="icon-button"
               aria-label="Người trình bày (P)"
               title="Người trình bày · P"
@@ -426,8 +452,8 @@ export default function App() {
             </button>
             <button
               className="icon-button"
-              aria-label="Xuất PowerPoint (E)"
-              title="Xuất PowerPoint · E"
+              aria-label="Đây là mục tải file PowerPoint xuống để nhận xét (E)"
+              title="Đây là mục tải file PowerPoint xuống để nhận xét · E"
               disabled={exporting}
               onClick={() => void doExport()}
             >
@@ -478,7 +504,9 @@ export default function App() {
           </div>
           {showRotateTip && (
             <aside className="mobile-rotate-tip" role="status">
-              <span>📱 Xoay ngang màn hình để xem bài giảng lớn & rõ nét hơn</span>
+              <span>
+                📱 Xoay ngang màn hình để xem bài giảng lớn & rõ nét hơn
+              </span>
               <div className="mobile-rotate-tip-actions">
                 {deck.pos.slide > 0 && (
                   <button
@@ -562,12 +590,13 @@ export default function App() {
       {help && (
         <Modal
           title="Sẵn sàng cho buổi thuyết trình"
-          onClose={() => setHelp(false)}
+          onClose={closeHelp}
           className="help-modal"
         >
           <p className="modal-description">
-            Di chuột để hiện thanh công cụ. Mở cửa sổ người trình bày và kéo
-            sang màn hình laptop; cửa sổ chính dành cho máy chiếu.
+            Chọn một ý để mở tiếp hoặc nhấp vào khoảng trống của màn hình trình
+            chiếu. Dùng các nút điều khiển để chuyển slide; nhấp vào thẻ ảnh để
+            xem ảnh lớn và thông tin ghi công.
           </p>
           <div className="shortcut-grid">
             {[
@@ -582,8 +611,10 @@ export default function App() {
               ["Z / B", "Kính lúp / màn đen"],
               ["E", "Xuất PowerPoint kèm ghi chú"],
               ["G", "Điều khiển bằng bàn tay"],
+              ["R", "Quay tên từ danh sách lớp"],
               ["Escape", "Tắt công cụ / đóng hộp thoại"],
-              ["1 / 2", "Chọn đáp án hoặc phân loại ảnh"],
+              ["A–D", "Chọn đáp án trong mini-game"],
+              ["1 / 2", "Phân loại thẻ ở slide khởi động"],
               ["+ / − / 0", "Zoom / đặt lại ảnh khi ảnh được chọn"],
             ].map(([k, l]) => (
               <div key={k}>
@@ -593,19 +624,29 @@ export default function App() {
             ))}
           </div>
           <p className="help-note">
-            <Check size={18} /> Ảnh, video, phông chữ và nhận diện cử chỉ đều
-            được lưu tại máy. Hãy mở bài một lần và chờ lưu offline trước buổi
-            trình bày.
+            <Check size={18} /> Ảnh tư liệu, phông chữ và công cụ cử chỉ được
+            lưu để dùng offline. Video VNA phát trực tuyến và cần kết nối
+            Internet. Nút tải PowerPoint tạo bản để lưu hoặc gửi nhận xét.
           </p>
         </Modal>
       )}
       {gesture && !presenter && (
         <GestureControl
-          onNext={deck.next}
-          onPrev={deck.prev}
+          onNext={() =>
+            window.dispatchEvent(
+              new KeyboardEvent("keydown", { key: "PageDown" }),
+            )
+          }
+          onPrev={() =>
+            window.dispatchEvent(
+              new KeyboardEvent("keydown", { key: "PageUp" }),
+            )
+          }
+          paused={Boolean(media || video || help || picker || deck.overview)}
           onClose={() => setGesture(false)}
         />
       )}
+      {picker && !presenter && <ClassPicker onClose={() => setPicker(false)} />}
       <div className="status-toast" role="status" aria-live="polite">
         {notice}
       </div>

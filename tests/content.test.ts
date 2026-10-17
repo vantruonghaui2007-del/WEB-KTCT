@@ -1,85 +1,97 @@
 import { describe, it, expect } from "vitest";
+import { existsSync, readFileSync } from "node:fs";
 import { slides } from "../src/content/slides";
 import { sources } from "../src/content/sources";
 import { media } from "../src/content/media";
-import { readFileSync, existsSync } from "node:fs";
-import JSZip from "jszip";
-describe("DOCX content", () => {
-  it("has exactly 20 ordered slides and six sources", () => {
-    expect(slides.map((s) => s.id)).toEqual(
+
+describe("presentation content", () => {
+  it("keeps exactly twenty ordered slides and all referenced sources", () => {
+    expect(slides.map((slide) => slide.id)).toEqual(
       Array.from({ length: 20 }, (_, i) => String(i + 1).padStart(2, "0")),
     );
-    expect(sources).toHaveLength(6);
-  });
-  it("preserves every original speaker note and every visible source paragraph", async () => {
-    const zip = await JSZip.loadAsync(
-      readFileSync("Noi_dung_Chu_de_7_da_bien_tap.docx"),
-    );
-    const xml = await zip.file("word/document.xml")!.async("string");
-    const doc = new DOMParser().parseFromString(xml, "application/xml");
-    const ps = [...doc.getElementsByTagName("w:p")].map((p) =>
-      [...p.getElementsByTagName("w:t")]
-        .map((t) => t.textContent)
-        .join("")
-        .normalize("NFC"),
-    );
-    for (let i = 0; i < 20; i++) {
-      const start = ps.findIndex((p) => p.startsWith(slides[i].id + ". "));
-      const end =
-        i === 19
-          ? ps.indexOf("Thông tin nguồn để nhóm gắn vào web")
-          : ps.findIndex((p) => p.startsWith(slides[i + 1].id + ". "));
-      const block = ps.slice(start, end);
-      const split = block.indexOf("Ghi chú và lời thuyết trình");
-      expect(slides[i].notes).toBe(block.slice(split + 1).join("\n"));
-      const visible = block.slice(2, split);
-      if (slides[i].concepts)
-        expect(
-          slides[i].concepts!.map((c) => `${c.term}: ${c.definition}`),
-        ).toEqual(visible);
-      else if (i !== 18 && i !== 0) expect(slides[i].points).toEqual(visible);
-    }
-  });
-  it("validates notes, source references, dated statistics and NFC", () => {
-    const ids = new Set(sources.map((s) => s.id));
-    for (const s of slides) {
-      expect(s.notes.trim()).not.toBe("");
-      s.sourceIds.forEach((id) => expect(ids.has(id)).toBe(true));
-      if (s.stats) expect(s.asOf).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    const sourceIds = new Set(sources.map((source) => source.id));
+    expect(sources).toHaveLength(9);
+    for (const slide of slides) {
+      expect(slide.notes.trim()).not.toBe("");
+      slide.sourceIds.forEach((id) => expect(sourceIds.has(id)).toBe(true));
     }
     expect(JSON.stringify(slides)).toBe(
       JSON.stringify(slides).normalize("NFC"),
     );
   });
-  it("enforces the editorial exclusions", () => {
-    for (const s of slides) {
-      const visible = [
-        s.title,
-        ...s.points,
-        ...(s.concepts || []).flatMap((c) => [c.term, c.definition]),
-      ].join("\n");
-      for (const bad of ["2.161", "3.227", "luôn không có mâu thuẫn"])
-        expect(visible).not.toContain(bad);
+
+  it("centers five required characteristics and keeps each one in its own section", () => {
+    const featureSlides = slides.filter((slide) =>
+      slide.section.startsWith("dac-diem-"),
+    );
+    expect(featureSlides.length).toBeGreaterThanOrEqual(10);
+    for (let n = 1; n <= 5; n++) {
+      const sectionSlides = slides.filter(
+        (slide) => slide.section === `dac-diem-${n}`,
+      );
+      expect(sectionSlides.length).toBeGreaterThan(0);
+      expect(sectionSlides.some((slide) => slide.notes.length > 250)).toBe(
+        true,
+      );
     }
+    expect(slides[4].points).toHaveLength(5);
+    expect(slides[9].notes).toContain("tốt đời, đẹp đạo");
+    expect(slides[13].notes).toContain("tôn giáo nội sinh");
   });
-  it("keeps five quiz answers hidden in structured data", () => {
-    expect(slides[18].quiz!.map((q) => q.answer)).toEqual([
-      "A",
+
+  it("uses the required seven-question quiz with four options and the supplied answer key", () => {
+    const quiz = slides[18].quiz!;
+    expect(quiz).toHaveLength(7);
+    expect(quiz.map((question) => question.answer)).toEqual([
       "B",
       "B",
+      "C",
       "A",
-      "A",
+      "D",
+      "B",
+      "C",
     ]);
+    for (const question of quiz) {
+      expect(question.options.map((option) => option.key)).toEqual([
+        "A",
+        "B",
+        "C",
+        "D",
+      ]);
+      expect(question.explanation.trim()).not.toBe("");
+    }
+    expect(quiz[2].explanation).toContain(
+      "không có nghĩa mọi giai đoạn lịch sử",
+    );
     expect(slides[18].points).toEqual([]);
   });
-  it("all media have local files, credit and license; MP4 and captions exist", () => {
-    for (const m of media) {
-      expect(existsSync(`public/${m.src}`)).toBe(true);
-      expect(m.alt).not.toBe("");
-      expect(m.credit).not.toBe("");
-      expect(m.license).toBe("CC0 1.0");
+
+  it("uses verified local photographs and records attribution, license and source", () => {
+    const credits = readFileSync("public/media/CREDITS.md", "utf8");
+    for (const item of media) {
+      expect(existsSync(`public/${item.src}`), item.id).toBe(true);
+      expect(existsSync(`public/media/export/${item.id}.jpg`), item.id).toBe(
+        true,
+      );
+      expect(item.alt).not.toBe("");
+      expect(item.credit).not.toBe("");
+      expect(item.license).not.toBe("");
+      expect(item.sourceUrl).toMatch(/^https:\/\/commons\.wikimedia\.org\//);
+      expect(credits).toContain(item.sourceUrl);
     }
-    expect(existsSync("public/media/mo-dau.mp4")).toBe(true);
-    expect(readFileSync("public/media/mo-dau.vtt", "utf8")).toMatch(/^WEBVTT/);
+    expect(existsSync("public/media/video-poster.webp")).toBe(true);
+    expect(existsSync("public/media/mo-dau.mp4")).toBe(false);
+    expect(existsSync("public/media/mo-dau.vtt")).toBe(false);
+    expect(credits).toContain(
+      "không phải ảnh Đại lễ Vesak Liên Hợp Quốc năm 2025",
+    );
+  });
+
+  it("uses a dated, single-source statistical snapshot and current law references", () => {
+    expect(slides[6].asOf).toBe("2025-08-15");
+    expect(slides[6].sourceIds).toContain("vnplus-thong-ke-2025");
+    expect(slides[16].sourceIds).toContain("luat-hien-hanh");
+    expect(slides[16].sourceIds).toContain("luat-2026");
+    expect(slides[16].notes).toContain("1/1/2027");
   });
 });

@@ -1,6 +1,12 @@
 import { test, expect, type Page } from "@playwright/test";
 import JSZip from "jszip";
 import { readFile } from "node:fs/promises";
+import { slides } from "../src/content/slides";
+import { fragmentCount } from "../src/deck/useDeck";
+
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("nhom7-guide-seen", "1"));
+});
 const go = async (page: Page, slide: number, step = 0) => {
   await page.evaluate((hash) => {
     location.hash = hash;
@@ -11,7 +17,7 @@ const go = async (page: Page, slide: number, step = 0) => {
   );
   await page.waitForTimeout(300);
 };
-test("clicker traverses the whole deck, handles Home and overview", async ({
+test("keyboard navigation advances slides, reaches deck boundaries and opens overview", async ({
   page,
 }) => {
   const errors: string[] = [];
@@ -22,8 +28,13 @@ test("clicker traverses the whole deck, handles Home and overview", async ({
       name: "Chủ đề 7: Đặc điểm của tôn giáo ở Việt Nam",
     }),
   ).toBeVisible();
-  for (let i = 0; i < 130; i++) await page.keyboard.press("PageDown");
+  for (let step = 0; step <= fragmentCount(slides[0]); step++)
+    await page.keyboard.press("PageDown");
+  await expect(page).toHaveURL(/#\/2\/0$/);
+  await page.keyboard.press("End");
   await expect(page).toHaveURL(/#\/20\/3$/);
+  await page.keyboard.press("ArrowLeft");
+  await expect(page).toHaveURL(/#\/20\/2$/);
   await page.keyboard.press("Home");
   await expect(page).toHaveURL(/#\/1\/0$/);
   await page.keyboard.press("o");
@@ -43,7 +54,7 @@ test("all slide layouts fit projector viewports and all images decode", async ({
   ]) {
     await page.setViewportSize(viewport);
     for (let n = 1; n <= 20; n++) {
-      await go(page, n, n === 19 ? 9 : 99);
+      await go(page, n, n === 19 ? 14 : 99);
       const result = await page.evaluate(() => {
         const slide = document.querySelector("article.slide")!;
         const footer = slide
@@ -51,7 +62,7 @@ test("all slide layouts fit projector viewports and all images decode", async ({
           .getBoundingClientRect();
         const points = [
           ...slide.querySelectorAll(
-            ".point,.stat-context,.map-node,.member-note,.prompt-note,.quiz-answer,.caution-note,.concept-grid,.gallery",
+            ".point,.stat-context,.map-node,.member-note,.prompt-note,.quiz-answer,.quiz-result,.caution-note,.concept-grid,.gallery",
           ),
         ].filter((el) => getComputedStyle(el).opacity !== "0");
         return {
@@ -80,29 +91,32 @@ test("all slide layouts fit projector viewports and all images decode", async ({
     }
   }
 });
-test("video loads, plays, seeks and reaches its end without media errors", async ({
+test("video opens the official VNA YouTube embed from its offline poster", async ({
   page,
 }) => {
+  await page.addInitScript(() =>
+    Object.defineProperty(navigator, "onLine", {
+      configurable: true,
+      get: () => true,
+    }),
+  );
   await page.goto("/");
-  await page.getByRole("button", { name: /Xem mở đầu/ }).click();
-  const video = page.locator("video");
-  await expect(video).toBeVisible();
-  await video.evaluate(async (v: HTMLVideoElement) => {
-    await v.play();
-  });
-  await expect
-    .poll(() => video.evaluate((v: HTMLVideoElement) => v.currentTime))
-    .toBeGreaterThan(0.2);
-  await expect
-    .poll(() => video.evaluate((v: HTMLVideoElement) => v.duration))
-    .toBeCloseTo(48, 0);
-  await video.evaluate((v: HTMLVideoElement) => {
-    v.currentTime = 47.3;
-  });
-  await expect
-    .poll(() => video.evaluate((v: HTMLVideoElement) => v.ended))
-    .toBe(true);
-  expect(await video.evaluate((v: HTMLVideoElement) => v.error)).toBeNull();
+  await page.getByRole("button", { name: /Xem video tư liệu VNA/ }).click();
+  await expect(page.locator(".intro-video-frame img")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Phát video Vesak 2025 của VNA" }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Phát video Vesak 2025 của VNA" })
+    .click();
+  const frame = page.locator(".intro-video-frame iframe");
+  await expect(frame).toHaveAttribute(
+    "src",
+    "https://www.youtube-nocookie.com/embed/pOSayvlZES4?autoplay=1&rel=0",
+  );
+  await expect(
+    page.getByRole("link", { name: "Mở video gốc trên YouTube" }),
+  ).toHaveAttribute("href", "https://www.youtube.com/watch?v=pOSayvlZES4");
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
@@ -154,14 +168,37 @@ test("flip cards, feature links, keyboard sorting and quiz reveal", async ({
   }
   await expect(page.getByText("Đã phân loại đủ 7 hình ảnh")).toBeVisible();
   await go(page, 19, 0);
-  await page.keyboard.press("1");
-  await expect(page.getByRole("button", { name: "A. Có." })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
-  await expect(page.getByText("Phân biệt tôn giáo và tổ chức.")).toHaveCount(0);
+  await page.keyboard.press("B");
+  await expect(
+    page.getByRole("button", { name: /^B\. 16 tôn giáo/ }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByText(/Mốc TTXVN ngày 15\/8\/2025/)).toHaveCount(0);
   await page.keyboard.press("PageDown");
-  await expect(page.getByText("Phân biệt tôn giáo và tổ chức.")).toBeVisible();
+  await expect(page.getByText(/Mốc TTXVN ngày 15\/8\/2025/)).toBeVisible();
+});
+test("all seven quiz questions accept the supplied answers and can be replayed", async ({
+  page,
+}) => {
+  await page.goto("/#/19/0");
+  for (const [index, answer] of ["B", "B", "C", "A", "D", "B", "C"].entries()) {
+    await page.keyboard.press(answer);
+    await page.keyboard.press("PageDown");
+    await expect(page.locator(".quiz-answer")).toContainText("Chính xác.");
+    await page
+      .getByRole("button", {
+        name: index === 6 ? "Xem kết quả" : "Câu tiếp theo",
+      })
+      .click();
+  }
+  await expect(page.getByText("Bạn trả lời đúng 7/7 câu")).toBeVisible();
+  await page.getByRole("button", { name: "Chơi lại" }).click();
+  await expect(page).toHaveURL(/#\/19\/0$/);
+  await expect(page.locator(".quiz h2")).toContainText(
+    "Theo nội dung thuyết trình",
+  );
+  await expect(
+    page.getByRole("button", { name: /^B\. 16 tôn giáo/ }),
+  ).toHaveAttribute("aria-pressed", "false");
 });
 test("presenter opens late, synchronizes bidirectionally and survives reload", async ({
   page,
@@ -206,7 +243,7 @@ test("tools toggle, annotation stays on its slide and clear erases it", async ({
   await page.mouse.move(580, 450, { steps: 12 });
   await page.mouse.up();
   const pixels = () =>
-    page.locator("canvas").evaluate((c: HTMLCanvasElement) =>
+    page.locator("canvas.ink-canvas").evaluate((c: HTMLCanvasElement) =>
       c
         .getContext("2d")!
         .getImageData(0, 0, c.width, c.height)
@@ -249,8 +286,9 @@ test("PowerPoint download contains 20 slides, notes, local pictures and Vietname
     ),
   ).toHaveLength(20);
   expect(
-    Object.keys(zip.files).filter((n) => /^ppt\/media\/.+\.png$/.test(n))
-      .length,
+    Object.keys(zip.files).filter((n) =>
+      /^ppt\/media\/.+\.(?:jpe?g|png)$/i.test(n),
+    ).length,
   ).toBeGreaterThan(0);
   expect(await zip.file("ppt/slides/slide1.xml")!.async("string")).toContain(
     "Đặc điểm của tôn giáo ở Việt Nam",
@@ -260,7 +298,7 @@ test("PowerPoint download contains 20 slides, notes, local pictures and Vietname
   ).not.toContain("Đáp án");
   expect(
     await zip.file("ppt/notesSlides/notesSlide19.xml")!.async("string"),
-  ).toContain("Đáp án A");
+  ).toContain("Đáp án B");
 });
 test("offline reload retains font, images, video and export; no external requests", async ({
   page,
@@ -291,14 +329,12 @@ test("offline reload retains font, images, video and export; no external request
         .evaluate((i: HTMLImageElement) => i.naturalWidth),
     )
     .toBeGreaterThan(0);
-  await page.getByRole("button", { name: /Xem mở đầu/ }).click();
-  const video = page.locator("video");
-  await video.evaluate(async (v: HTMLVideoElement) => {
-    await v.play();
-  });
-  await expect
-    .poll(() => video.evaluate((v: HTMLVideoElement) => v.currentTime))
-    .toBeGreaterThan(0.1);
+  await page.getByRole("button", { name: /Xem video tư liệu VNA/ }).click();
+  await expect(page.locator(".intro-video-frame img")).toBeVisible();
+  await expect(page.locator(".intro-video-status")).toContainText(
+    "Bạn đang ngoại tuyến",
+  );
+  await expect(page.locator(".intro-video-frame iframe")).toHaveCount(0);
   await page.keyboard.press("Escape");
   const dl = page.waitForEvent("download");
   await page.keyboard.press("e");

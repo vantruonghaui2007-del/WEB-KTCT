@@ -53,20 +53,53 @@ it("feature 3 navigates to slide 10", () => {
   fireEvent.click(screen.getAllByRole("button")[2]);
   expect(go).toHaveBeenCalledWith(9);
 });
-it("quiz selection does not reveal the answer until the next step", () => {
-  const { rerender } = render(<Quiz items={slides[18].quiz!} step={0} />);
-  expect(screen.queryByText(slides[18].quiz![0].explanation)).toBeNull();
-  fireEvent.keyDown(window, { key: "1" });
-  expect(screen.getByRole("button", { name: /^A/ })).toHaveAttribute(
+it("quiz supports four choices, confirmation, feedback, score and replay", () => {
+  const items = slides[18].quiz!;
+  const onNext = vi.fn();
+  const onRestart = vi.fn();
+  const { rerender } = render(
+    <Quiz items={items} step={0} onNext={onNext} onRestart={onRestart} />,
+  );
+  expect(screen.queryByText(items[0].explanation)).toBeNull();
+  fireEvent.keyDown(window, { key: "b" });
+  expect(screen.getByRole("button", { name: /^B\./ })).toHaveAttribute(
     "aria-pressed",
     "true",
   );
-  rerender(<Quiz items={slides[18].quiz!} step={1} />);
-  expect(screen.getByRole("button", { name: /^A/ })).toHaveAttribute(
+  fireEvent.click(screen.getByRole("button", { name: "Xác nhận đáp án" }));
+  expect(onNext).toHaveBeenCalledTimes(1);
+  rerender(
+    <Quiz items={items} step={1} onNext={onNext} onRestart={onRestart} />,
+  );
+  expect(screen.getByRole("button", { name: /^B\./ })).toHaveAttribute(
     "data-correct",
     "true",
   );
-  expect(screen.getByText(slides[18].quiz![0].explanation)).toBeVisible();
+  expect(screen.getByText(items[0].explanation)).toBeVisible();
+
+  rerender(
+    <Quiz items={items} step={2} onNext={onNext} onRestart={onRestart} />,
+  );
+  fireEvent.keyDown(window, { key: "a" });
+  fireEvent.click(screen.getByRole("button", { name: "Xác nhận đáp án" }));
+  rerender(
+    <Quiz items={items} step={3} onNext={onNext} onRestart={onRestart} />,
+  );
+  expect(screen.getByText(/Chưa chính xác\. Đáp án là B\./)).toBeVisible();
+
+  rerender(
+    <Quiz items={items} step={14} onNext={onNext} onRestart={onRestart} />,
+  );
+  expect(screen.getByText("Bạn trả lời đúng 1/7 câu")).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: /Chơi lại/ }));
+  expect(onRestart).toHaveBeenCalledTimes(1);
+  rerender(
+    <Quiz items={items} step={0} onNext={onNext} onRestart={onRestart} />,
+  );
+  expect(screen.getByRole("button", { name: /^B\./ })).toHaveAttribute(
+    "aria-pressed",
+    "false",
+  );
 });
 it("sorts all seven cards with the keyboard and rejects incorrect assignments", () => {
   render(<SortGame conclusion={slides[2].points[2]} />);

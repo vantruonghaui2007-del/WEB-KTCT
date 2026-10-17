@@ -22,6 +22,7 @@ export function SafeImage({
         const el = e.currentTarget;
         if (!el.dataset.fallback) {
           el.dataset.fallback = "true";
+          el.alt = "Ảnh tư liệu hiện không tải được";
           el.src = asset("media/placeholder.svg");
         }
       }}
@@ -175,7 +176,10 @@ export function ImageStage({ item }: { item: MediaItem }) {
         <span>Kéo để di chuyển · Nhấp đúp để đặt lại</span>
       </div>
       <p className="media-credit">
-        {item.credit} · {item.license}
+        {item.credit} · {item.license} ·{" "}
+        <a href={item.sourceUrl} target="_blank" rel="noreferrer">
+          Trang ảnh gốc
+        </a>
       </p>
     </div>
   );

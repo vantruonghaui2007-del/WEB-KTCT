@@ -23,6 +23,7 @@ export const KEYMAP: Record<string, string> = {
   Escape: "escape",
   e: "export",
   g: "gesture",
+  r: "picker",
   f: "fullscreen",
   "?": "help",
 };
@@ -30,7 +31,7 @@ export const isTyping = (target: EventTarget | null) =>
   target instanceof HTMLElement &&
   !!target.closest('input,textarea,select,[contenteditable="true"]');
 export function fragmentCount(s: Slide) {
-  return s.quiz ? s.quiz.length * 2 - 1 : s.points.length;
+  return s.quiz ? s.quiz.length * 2 : s.points.length;
 }
 export function next(p: DeckPos, d: Slide[]): DeckPos {
   return p.step < fragmentCount(d[p.slide])
@@ -115,6 +116,13 @@ export function useDeck(
       const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
       const a = KEYMAP[k];
       if (!a) return;
+      const onQuiz = Boolean(deck[ref.current.slide]?.quiz);
+      if (
+        onQuiz &&
+        ((a === "next" && !["ArrowLeft", "PageUp"].includes(e.key)) ||
+          /^[a-d]$/i.test(k))
+      )
+        return;
       e.preventDefault();
       if (a === "next") advance();
       else if (a === "prev") back();

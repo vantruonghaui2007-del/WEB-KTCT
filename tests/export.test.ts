@@ -13,7 +13,10 @@ it("builds 20 slides with sources, dates and private quiz answers", () => {
   expect(m[6].bullets).toContain("Gần 30.000 cơ sở thờ tự");
   expect(m[6].bullets.at(-1)).toMatch(/^Số liệu công bố 15\/08\/2025/);
   expect(m[18].bullets.join(" ")).not.toMatch(/Đáp án/);
-  expect(m[18].notes).toMatch(/Đáp án A/);
+  expect(m[18].notes).toMatch(/Câu 1\..*Đáp án B\./s);
+  expect(m[18].notes).toMatch(/Câu 7\..*Đáp án C\./s);
+  expect(m[0].imagePath).toBe("media/export/pagoda.jpg");
+  expect(m[0].imageCredit).toMatch(/CC BY-SA 2\.0/);
   m.forEach((s) => expect(s.sourceLine).toMatch(/^Nguồn: /));
   expect(m[16].bullets.at(-1)).toContain("chưa có hiệu lực");
 });
@@ -46,7 +49,7 @@ it("writes a real PPTX with 20 note pages and Vietnamese text even when an image
     );
     expect(
       await zip.file("ppt/notesSlides/notesSlide19.xml")!.async("string"),
-    ).toContain("Đáp án A");
+    ).toContain("Đáp án B");
   } finally {
     globalThis.fetch = original;
   }
